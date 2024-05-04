@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+
+        #login-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+            margin-top: 100px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .password-input {
+            position: relative;
+        }
+
+        .password-input input[type="password"] {
+            width: calc(100% - 40px);
+        }
+
+        .password-input button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: calc(100% - 2px);
+            width: 30px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+            line-height: 1.5;
+            padding: 0;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #loginError {
+            text-align: center;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-container">
+        <h2>Login</h2>
+        <form id="loginForm" action="index.html" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" class="form-control" required><br>
+            <label for="password">Password:</label>
+            <div class="password-input">
+                <input type="password" id="password" name="password" class="form-control" required>
+                <button type="button" id="showPassword" class="btn btn-outline-secondary btn-sm">Show</button>
+            </div><br>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p id="loginError"></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const passwordInput = document.getElementById("password");
+            const showPasswordButton = document.getElementById("showPassword");
+
+            showPasswordButton.addEventListener("click", function() {
+                if (passwordInput.type === "password") {
+                    passwordInput.type = "text";
+                } else {
+                    passwordInput.type = "password";
+                }
+            });
+        });
+    </script>
+</body>
+</html>
