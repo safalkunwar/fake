@@ -1,47 +1,8 @@
-$(document).ready(function() {
-    $('#showPassword').click(function() {
-        const passwordInput = $('#password');
-        const passwordFieldType = passwordInput.attr('type');
-
-        if (passwordFieldType === 'password') {
-            passwordInput.attr('type', 'text');
-            $(this).text('Hide');
-        } else {
-            passwordInput.attr('type', 'password');
-            $(this).text('Show');
-        }
-    });
-
-    $('#loginForm').submit(function(event) {
-        event.preventDefault(); // Prevent form submission
-        const username = $('#username').val();
-        const password = $('#password').val();
-
-        // Simulated login request, replace with actual backend integration
-        const success = true; // Change based on actual login response
-
-        if (success) {
-            $('#login-form').hide(); // Hide login form
-            $('#map').show(); // Display map
-            $('#welcomeMessage').text('Welcome, ' + username + '!').show(); // Display welcome message
-            initMap(username); // Initialize map with username
-        } else {
-            $('#loginError').text('Invalid username or password');
-        }
-    });
-});
-
 function initMap(username) {
-    const recentTracking = [
-        { id: 1, location: 'Kathmandu, Nepal', timestamp: '2023-03-14 10:30:00' },
-        { id: 2, location: 'Bhaktapur, Nepal', timestamp: '2023-03-14 09:45:00' },
-        { id: 3, location: 'Pokhara, Nepal', timestamp: '2023-03-14 08:10:00' }
-    ];
-
     const vehicleLocation = { lat: 28.2639, lng: 83.9733 };
-    const universityLocation = { lat: 28.2639, lng: 83.9733 };
+    const universityLocation = { lat: 28.266799, lng: 83.947842 };
     const mapElement = document.getElementById('map');
-    const recentTrackingList = document.getElementById('recent-tracking');
+    const asideElement = document.querySelector('aside');
 
     const map = new google.maps.Map(mapElement, {
         center: vehicleLocation,
@@ -51,7 +12,11 @@ function initMap(username) {
     const vehicleMarker = new google.maps.Marker({
         position: vehicleLocation,
         map: map,
-        title: '🚌 Vehicle Location'
+        icon: {
+            url: 'https://emojicdn.elk.sh/🚌',
+            scaledSize: new google.maps.Size(32, 32)
+        },
+        title: 'Vehicle Location'
     });
 
     if (navigator.geolocation) {
@@ -64,34 +29,102 @@ function initMap(username) {
             const userMarker = new google.maps.Marker({
                 position: userLocation,
                 map: map,
-                title: '🏫 Your Location'
+                icon: {
+                    url: 'https://emojicdn.elk.sh/🕴',
+                    scaledSize: new google.maps.Size(35, 35)
+                },
+                title: 'Your Location'
             });
 
-            const vehicleToUserPath = new google.maps.Polyline({
-                path: [vehicleLocation, userLocation],
-                geodesic: true,
-                strokeColor: '#FF0000',
-                strokeOpacity: 1.0,
-                strokeWeight: 2
+            const universityMarker = new google.maps.Marker({
+                position: universityLocation,
+                map: map,
+                icon: {
+                    url: 'https://emojicdn.elk.sh/🏫',
+                    scaledSize: new google.maps.Size(32, 32)
+                },
+                title: 'University Location'
             });
-            vehicleToUserPath.setMap(map);
 
-            const vehicleDistance = google.maps.geometry.spherical.computeDistanceBetween(
-                new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                new google.maps.LatLng(vehicleLocation.lat, vehicleLocation.lng)
-            );
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(vehicleMarker.getPosition());
+            bounds.extend(userMarker.getPosition());
+            bounds.extend(universityMarker.getPosition());
+            map.fitBounds(bounds);
 
-            const universityDistance = google.maps.geometry.spherical.computeDistanceBetween(
-                new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                new google.maps.LatLng(universityLocation.lat, universityLocation.lng)
-            );
+            google.maps.event.addListenerOnce(map, 'idle', function() {
+                // Calculate distances
+                const distanceUserVehicle = haversineDistance(userLocation, vehicleLocation);
+                const distanceVehicleUniversity = haversineDistance(vehicleLocation, universityLocation);
 
-            recentTracking.forEach(item => recentTrackingList.innerHTML += `<li>Location: ${item.location}, Timestamp: ${item.timestamp}</li>`);
-            recentTrackingList.innerHTML += `<li>Distance to vehicle: ${(vehicleDistance / 1000).toFixed(2)} kilometers</li>`;
-            recentTrackingList.innerHTML += `<li>Distance to university: ${(universityDistance / 1000).toFixed(2)} kilometers</li>`;
-            recentTrackingList.innerHTML += `<li>You are ${(universityDistance / 1000).toFixed(2)} kilometers away from the university.</li>`;
+                // Display distances in aside
+                asideElement.innerHTML += `
+                    <h2>Distance Messages</h2>
+                    <p>Distance between you and vehicle: ${distanceUserVehicle.toFixed(2)} km</p>
+                    <p>Distance between vehicle and university: ${distanceVehicleUniversity.toFixed(2)} km</p>
+                `;
+
+                // Show direction
+                const directionsService = new google.maps.DirectionsService();
+                const vehicleToUserDirectionsRequest = {
+                    origin: vehicleLocation,
+                    destination: userLocation,
+                    travelMode: 'DRIVING'
+                };
+                directionsService.route(vehicleToUserDirectionsRequest, function(result, status) {
+                    if (status === 'OK') {
+                        const vehicleToUserPath = new google.maps.Polyline({
+                            path: result.routes[0].overview_path,
+                            geodesic: true,
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 1.0,
+                            strokeWeight: 2
+                        });
+                        vehicleToUserPath.setMap(map);
+                    } else {
+                        console.error('Directions request failed due to ' + status);
+                    }
+                });
+
+                const vehicleToUniversityDirectionsRequest = {
+                    origin: vehicleLocation,
+                    destination: universityLocation,
+                    travelMode: 'DRIVING'
+                };
+                directionsService.route(vehicleToUniversityDirectionsRequest, function(result, status) {
+                    if (status === 'OK') {
+                        const vehicleToUniversityPath = new google.maps.Polyline({
+                            path: result.routes[0].overview_path,
+                            geodesic: true,
+                            strokeColor: '#0000FF',
+                            strokeOpacity: 1.0,
+                            strokeWeight: 2
+                        });
+                        vehicleToUniversityPath.setMap(map);
+                    } else {
+                        console.error('Directions request failed due to ' + status);
+                    }
+                });
+            });
         });
-    } else {
-        recentTrackingList.innerHTML += `<li>Geolocation is not supported by this browser.</li>`;
     }
+}
+
+// Function to calculate Haversine distance between two points in kilometers
+function haversineDistance(point1, point2) {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = deg2rad(point2.lat - point1.lat);
+    const dLon = deg2rad(point2.lng - point1.lng);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(point1.lat)) * Math.cos(deg2rad(point2.lat)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+}
+
+// Function to convert degrees to radians
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
 }
